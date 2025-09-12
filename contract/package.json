@@ -1,0 +1,27 @@
+{
+  "name": "contract",
+  "version": "1.0.0",
+  "type": "module",
+  "script": {
+    "contract:compile": "pnpm hardhat compile",
+    "contract:redeploy:sepolia": "rm -rf ignition/deployments/chain-11155111 && npx hardhat ignition deploy ignition/modules/deploymentSepoliaV7.ts --network sepolia"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ignition": "^3.0.0",
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.0",
+    "@openzeppelin/contracts": "^5.4.0",
+    "@types/chai": "^5.2.2",
+    "@types/node": "^22.8.5",
+    "chai": "^6.0.1",
+    "forge-std": "github:foundry-rs/forge-std#v1.9.4",
+    "hardhat": "^3.0.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-solidity": "^2.1.0",
+    "tsx": "^4.20.5",
+    "viem": "^2.30.0"
+  },
+  "dependencies": {
+    "@aave/core-v3": "^1.19.3",
+    "dotenv": "^17.2.2"
+  }
+}
