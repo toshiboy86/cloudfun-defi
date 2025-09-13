@@ -1,93 +1,92 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Circle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
 interface ArtistCardProps {
   id: string;
   name: string;
-  image: string;
-  isFunded: boolean;
-  genre?: string;
-  followers: number;
+  status: 'active' | 'no-pool';
+  genre: string;
+  followers: string;
   popularity: number;
-  lpTokens: number;
-  lpBalance: number;
+  lpTokens: string;
+  lpBalance: string;
+  buttonText: string;
+  imageUrl: string;
 }
 
-const ArtistCard = ({ 
-  id, 
-  name, 
-  image, 
-  isFunded, 
-  genre = "Alternative Rock",
+import Link from 'next/link';
+
+export function ArtistCard({
+  id,
+  name,
+  status,
+  genre,
   followers,
   popularity,
   lpTokens,
-  lpBalance
-}: ArtistCardProps) => {
-  const navigate = useNavigate();
-
+  lpBalance,
+  buttonText,
+  imageUrl,
+}: ArtistCardProps) {
   return (
-    <Card className="group overflow-hidden bg-card border-border shadow-soft hover:shadow-warm transition-all duration-300 hover:scale-105">
-      <div className="aspect-square overflow-hidden">
-        <img 
-          src={image} 
-          alt={name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-        />
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+      {/* Artist Image */}
+      <div className="relative h-48 overflow-hidden">
+        <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
       </div>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="font-bold text-xl text-foreground">{name}</h3>
-          <div className="flex-shrink-0">
-            {isFunded ? (
-              <div className="flex items-center space-x-1 text-accent text-xs font-medium">
-                <CheckCircle className="w-4 h-4" />
-                <span>Pool Active</span>
-              </div>
+
+      {/* Artist Info */}
+      <div className="p-6">
+        {/* Status and Name */}
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-bold text-gray-900">{name}</h3>
+          <div className="flex items-center space-x-1">
+            {status === 'active' ? (
+              <>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-green-600 font-medium">
+                  Funding Active
+                </span>
+              </>
             ) : (
-              <div className="flex items-center space-x-1 text-muted-foreground text-xs font-medium">
-                <Circle className="w-4 h-4" />
-                <span>No Pool</span>
-              </div>
+              <>
+                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                <span className="text-sm text-gray-500 font-medium">
+                  No Pool
+                </span>
+              </>
             )}
           </div>
         </div>
-        
-        <Badge variant="secondary" className="mb-4">
-          {genre}
-        </Badge>
-        
-        <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-          <div className="bg-muted/30 rounded-lg p-3">
-            <div className="text-muted-foreground text-xs mb-1">Followers</div>
-            <div className="font-semibold text-foreground">{followers.toLocaleString()}</div>
+
+        {/* Genre */}
+        {/* <div className="mb-4">
+          <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+            {genre}
+          </span>
+        </div> */}
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div>
+            <p className="text-sm text-gray-500">LP Tokens</p>
+            <p className="text-lg font-semibold text-gray-900">{lpTokens}</p>
           </div>
-          <div className="bg-muted/30 rounded-lg p-3">
-            <div className="text-muted-foreground text-xs mb-1">Popularity</div>
-            <div className="font-semibold text-foreground">{popularity}/100</div>
-          </div>
-          <div className="bg-muted/30 rounded-lg p-3">
-            <div className="text-muted-foreground text-xs mb-1">LP Tokens</div>
-            <div className="font-semibold text-foreground">{lpTokens.toFixed(2)}</div>
-          </div>
-          <div className="bg-muted/30 rounded-lg p-3">
-            <div className="text-muted-foreground text-xs mb-1">LP Balance</div>
-            <div className="font-semibold text-foreground">${lpBalance.toFixed(2)}</div>
+          <div>
+            <p className="text-sm text-gray-500">LP Balance</p>
+            <p className="text-lg font-semibold text-gray-900">{lpBalance}</p>
           </div>
         </div>
-        
-        <Button 
-          onClick={() => navigate(`/artist/${id}`)}
-          className="w-full bg-gradient-sunset text-primary-foreground hover:opacity-90 transition-opacity border-none shadow-none"
-        >
-          {isFunded ? "View Investment" : "Fund Artist"}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
 
-export default ArtistCard;
+        {/* Action Button */}
+        <Link
+          href={`/artist/${id}`}
+          className={`block w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl text-center ${
+            status === 'active'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700'
+              : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
+          }`}
+        >
+          {buttonText}
+        </Link>
+      </div>
+    </div>
+  );
+}
