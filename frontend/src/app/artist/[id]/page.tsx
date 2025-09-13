@@ -3,6 +3,9 @@
 import { useState, use, useEffect } from 'react';
 import { ArtistProfile } from '../../../components/ArtistProfile';
 import { ArtistFunding } from '../../../components/ArtistFunding';
+import { useFanVestFactory } from '../../../hooks/useFanVestFactory';
+import { useFanVestPool } from '../../../hooks/useFanVestPool';
+import { weiToUsdc } from '../../../lib/currency';
 
 interface ArtistDetailPageProps {
   params: Promise<{
@@ -36,12 +39,80 @@ interface OracleResponse {
   artist_id: string;
 }
 
+interface PoolData {
+  exists: boolean;
+  poolAddress?: string;
+  totalSupply: string;
+  totalUSDC: string;
+  tokenName?: string;
+  tokenSymbol?: string;
+}
+
 export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
   const [fundAmount, setFundAmount] = useState('0.00');
   const [artist, setArtist] = useState<SpotifyArtistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [poolData, setPoolData] = useState<PoolData | null>(null);
+  const [poolLoading, setPoolLoading] = useState(false);
   const { id } = use(params);
+  
+  const { hasPool, getPoolInfo, isLoading: contractLoading } = useFanVestFactory();
+  const { getPoolInfo: getPoolDetails } = useFanVestPool();
+
+  // Function to fetch pool data for the artist
+  const fetchPoolData = async (artistId: string) => {
+    try {
+      setPoolLoading(true);
+      
+      // Check if pool exists
+      const poolExists = await hasPool(artistId);
+      
+      if (poolExists) {
+        // Get pool info from factory
+        const poolInfo = await getPoolInfo(artistId);
+        
+        if (poolInfo.poolAddress && poolInfo.poolAddress !== '0x0000000000000000000000000000000000000000') {
+          // Get detailed pool data from pool contract
+          const poolDetails = await getPoolDetails(poolInfo.poolAddress);
+          
+          // Convert bigint values to formatted strings
+          const totalSupply = weiToUsdc(poolDetails.totalSupplyAmount);
+          const totalUSDC = weiToUsdc(poolDetails.totalUSDCAmount);
+          
+          setPoolData({
+            exists: true,
+            poolAddress: poolInfo.poolAddress,
+            totalSupply: totalSupply.toFixed(2),
+            totalUSDC: totalUSDC.toFixed(2),
+            tokenName: poolDetails.tokenName,
+            tokenSymbol: poolDetails.tokenSymbol,
+          });
+        } else {
+          setPoolData({
+            exists: false,
+            totalSupply: '0.00',
+            totalUSDC: '0.00',
+          });
+        }
+      } else {
+        setPoolData({
+          exists: false,
+          totalSupply: '0.00',
+          totalUSDC: '0.00',
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching pool data:', err);
+      setPoolData({
+        exists: false,
+        totalSupply: '0.00',
+        totalUSDC: '0.00',
+      });
+    } finally {
+      setPoolLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchArtistData = async () => {
@@ -63,6 +134,9 @@ export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
         }
 
         setArtist(oracleData.data);
+        
+        // Fetch pool data after getting artist data
+        await fetchPoolData(id);
       } catch (err) {
         console.error('Error fetching artist data:', err);
         setError(
@@ -93,14 +167,16 @@ export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
     setFundAmount(amount);
   };
 
-  if (loading) {
+  if (loading || poolLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex justify-center items-center h-64">
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-              <p className="mt-4 text-gray-600">Loading artist data...</p>
+              <p className="mt-4 text-gray-600">
+                {loading ? 'Loading artist data...' : 'Loading pool data...'}
+              </p>
             </div>
           </div>
         </div>
@@ -162,6 +238,7 @@ export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
             fundAmount={fundAmount}
             onFundAmountChange={handleFundAmountChange}
             onFundArtist={handleFundArtist}
+            poolData={poolData}
           />
         </div>
       </div>

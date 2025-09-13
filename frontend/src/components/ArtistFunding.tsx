@@ -1,10 +1,20 @@
 import { FundingOverviewCards } from './FundingOverviewCards';
 
+interface PoolData {
+  exists: boolean;
+  poolAddress?: string;
+  totalSupply: string;
+  totalUSDC: string;
+  tokenName?: string;
+  tokenSymbol?: string;
+}
+
 interface ArtistFundingProps {
   artistName: string;
   fundAmount: string;
   onFundAmountChange: (amount: string) => void;
   onFundArtist: () => void;
+  poolData?: PoolData | null;
 }
 
 export function ArtistFunding({
@@ -12,28 +22,69 @@ export function ArtistFunding({
   fundAmount,
   onFundAmountChange,
   onFundArtist,
+  poolData,
 }: ArtistFundingProps) {
-  // Mock funding data - in a real app, this would come from your smart contracts
-  const mockFundingData = {
-    totalFunded: '$45,780.5',
-    interestEarned: '$2,340.25',
-    totalFans: '127',
-    yourLPTokens: '127.50',
+  // Use real pool data or fallback to mock data
+  const fundingData = poolData ? {
+    totalFunded: `$${poolData.totalUSDC}`,
+    interestEarned: '$0.00', // This would need to be calculated from Aave interest
+    totalFans: poolData.totalSupply, // Using total LP tokens as proxy for fans
+    yourLPTokens: '0.00', // This would be user-specific
+  } : {
+    totalFunded: '$0.00',
+    interestEarned: '$0.00',
+    totalFans: '0',
+    yourLPTokens: '0.00',
   };
 
   return (
     <div className="space-y-8">
       <FundingOverviewCards
-        totalFunded={mockFundingData.totalFunded}
-        interestEarned={mockFundingData.interestEarned}
-        totalFans={mockFundingData.totalFans}
-        yourLPTokens={mockFundingData.yourLPTokens}
+        totalFunded={fundingData.totalFunded}
+        interestEarned={fundingData.interestEarned}
+        totalFans={fundingData.totalFans}
+        yourLPTokens={fundingData.yourLPTokens}
       />
+
+      {/* Pool Status Section */}
+      {poolData && (
+        <div className="bg-white p-6 rounded-2xl shadow-lg">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Pool Status
+          </h3>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Pool Exists:</span>
+              <span className={`font-medium ${poolData.exists ? 'text-green-600' : 'text-red-600'}`}>
+                {poolData.exists ? 'Yes' : 'No'}
+              </span>
+            </div>
+            {poolData.exists && poolData.tokenName && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Token Name:</span>
+                  <span className="font-medium">{poolData.tokenName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Token Symbol:</span>
+                  <span className="font-medium">{poolData.tokenSymbol}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Pool Address:</span>
+                  <span className="font-mono text-sm text-blue-600">
+                    {poolData.poolAddress?.slice(0, 6)}...{poolData.poolAddress?.slice(-4)}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Fund This Artist Section */}
       <div className="bg-white p-8 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          $ Fund This Artist
+          {poolData?.exists ? '$ Fund This Artist' : '$ Create Pool & Fund Artist'}
         </h2>
 
         <div className="space-y-6">
