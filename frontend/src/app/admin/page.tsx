@@ -2,9 +2,9 @@
 
 import { LoginPage } from '../../components/LoginPage';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 
-export default function AdminPage() {
+function AdminPageContent() {
   const searchParams = useSearchParams();
   const [artistId, setArtistId] = useState<string | null>(null);
 
@@ -18,4 +18,12 @@ export default function AdminPage() {
 
   console.log('artistId', artistId);
   return <LoginPage artistId={artistId || undefined} />;
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminPageContent />
+    </Suspense>
+  );
 }
