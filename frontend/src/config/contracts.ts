@@ -55,12 +55,3 @@ export function validateContractConfig(): { isValid: boolean; missingAddresses: 
     missingAddresses,
   };
 }
-
-/**
- * Get contract address by name
- * @param contractName - The name of the contract
- * @returns The contract address
- */
-export function getContractAddress(contractName: keyof typeof CONTRACT_ADDRESSES): string {
-  return CONTRACT_ADDRESSES[contractName];
-}

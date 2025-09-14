@@ -16,7 +16,6 @@ export interface PoolDetails {
   tokenSymbol: string;
   totalUSDCAmount: bigint;
   totalSupplyAmount: bigint;
-  earnedInterest: bigint;
 }
 
 export function useFanVestPool(poolAddress?: string) {

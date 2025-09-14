@@ -1,5 +1,5 @@
 {
-  "name": "balance-aggregater",
+  "name": "cloudfun-defi",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,28 +12,28 @@
   },
   "dependencies": {
     "@across-protocol/app-sdk": "^0.4.0",
-    "@lifi/sdk": "^3.12.2",
-    "@privy-io/react-auth": "^1.80.0",
+    "@lifi/sdk": "^3.12.5",
+    "@privy-io/react-auth": "^1.99.1",
     "@zerodev/ecdsa-validator": "^5.4.9",
     "@zerodev/sdk": "^5.4.41",
     "dotenv": "^17.2.2",
     "next": "15.5.2",
-    "permissionless": "^0.2.56",
+    "permissionless": "^0.2.57",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "viem": "^2.37.4"
+    "viem": "^2.37.5"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/node": "^20.19.14",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
     "chalk": "^5.6.2",
     "fs": "0.0.1-security",
     "http-proxy": "^1.18.1",
     "path": "^0.12.7",
-    "tailwindcss": "^4",
-    "tsx": "^4.19.2",
+    "tailwindcss": "^4.1.13",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   }
 }
