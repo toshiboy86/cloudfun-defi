@@ -2,7 +2,7 @@
 
 import { HeroSection } from '../../components/HeroSection';
 import { ArtistCard } from '../../components/ArtistCard';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { useSpotify } from '../../contexts/SpotifyContext';
 import { useFanVestFactory } from '../../hooks/useFanVestFactory';
 import { useFanVestPool } from '../../hooks/useFanVestPool';
@@ -49,6 +49,9 @@ interface ArtistWithFunding {
   poolAddress?: string;
 }
 
+// Memoized ArtistCard to prevent unnecessary re-renders
+const MemoizedArtistCard = memo(ArtistCard);
+
 export default function ListPage() {
   const [artists, setArtists] = useState<ArtistWithFunding[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,86 +60,47 @@ export default function ListPage() {
   const [poolStatuses, setPoolStatuses] = useState<Record<string, 'active' | 'no-pool'>>({});
   const [poolAddresses, setPoolAddresses] = useState<Record<string, string>>({});
   const [poolData, setPoolData] = useState<Record<string, { lpTokens: string; lpBalance: string }>>({});
+  const [isCheckingPools, setIsCheckingPools] = useState(false);
+  const hasFetchedData = useRef(false);
+  const hasCheckedPools = useRef(false);
+  const lastArtistIds = useRef<string[]>([]);
   const { accessToken, isConnected } = useSpotify();
   const { hasPool, getPoolInfo, isLoading: contractLoading } = useFanVestFactory();
   const { getPoolInfo: getPoolDetails } = useFanVestPool();
 
-  // Function to check pool status and get pool data for all artists
-  const checkPoolStatuses = async (artistIds: string[]) => {
-    const statuses: Record<string, 'active' | 'no-pool'> = {};
-    const addresses: Record<string, string> = {};
-    const poolInfo: Record<string, { lpTokens: string; lpBalance: string }> = {};
-    
-    for (const artistId of artistIds) {
-      try {
-        // Check if pool exists
-        const poolExists = await hasPool(artistId);
-        statuses[artistId] = poolExists ? 'active' : 'no-pool';
-        
-        if (poolExists) {
-          // Get pool info from factory
-          const poolInfoData = await getPoolInfo(artistId);
-          addresses[artistId] = poolInfoData.poolAddress;
-          
-          // Get detailed pool data from pool contract
-          if (poolInfoData.poolAddress && poolInfoData.poolAddress !== '0x0000000000000000000000000000000000000000') {
-            try {
-              const poolDetails = await getPoolDetails(poolInfoData.poolAddress);
-                console.log("yougot ", poolDetails.totalSupplyAmount)
-                // Convert bigint values to formatted strings
-                const totalSupply = weiToUsdc(poolDetails.totalSupplyAmount);
-                const totalUSDC = weiToUsdc(poolDetails.totalUSDCAmount);
-              
-              poolInfo[artistId] = {
-                lpTokens: totalSupply.toFixed(2),
-                lpBalance: `$${totalUSDC.toFixed(2)}`,
-              };
-            } catch (poolErr) {
-              console.error(`Error getting pool details for artist ${artistId}:`, poolErr);
-              // Fallback to mock data if pool details fail
-              poolInfo[artistId] = {
-                lpTokens: '0.00',
-                lpBalance: '$0.00',
-              };
-            }
-          }
-        } else {
-          // No pool exists, use default values
-          poolInfo[artistId] = {
-            lpTokens: '0.00',
-            lpBalance: '$0.00',
-          };
-        }
-      } catch (err) {
-        console.error(`Error checking pool for artist ${artistId}:`, err);
-        statuses[artistId] = 'no-pool'; // Default to no-pool on error
-        poolInfo[artistId] = {
-          lpTokens: '0.00',
-          lpBalance: '$0.00',
-        };
-      }
-    }
-    
-    setPoolStatuses(statuses);
-    setPoolAddresses(addresses);
-    setPoolData(poolInfo);
-    
-    console.log('Pool statuses updated:', statuses);
-    console.log('Pool addresses updated:', addresses);
-    console.log('Pool data updated:', poolInfo);
-  };
 
+  // Function to create initial artist data (without pool information)
+  const createInitialArtistData = useCallback((spotifyData: SpotifyArtistData[]): ArtistWithFunding[] => {
+    return spotifyData.map((data) => ({
+      id: data.id,
+      name: data.name,
+      status: 'no-pool' as const,
+      genre: data.genres[0] || 'Unknown',
+      followers: data.followers.total.toLocaleString(),
+      popularity: data.popularity,
+      lpTokens: '0.00',
+      lpBalance: '$0.00',
+      buttonText: 'Fund Artist',
+      imageUrl: data.images[0]?.url || 'https://via.placeholder.com/400x300?text=No+Image',
+      poolAddress: undefined,
+    }));
+  }, []);
+
+  // Main effect to fetch Spotify data
   useEffect(() => {
     const fetchFollowedArtists = async () => {
-      if (!isConnected || !accessToken) {
-        setError('Please connect your Spotify account first');
-        setLoading(false);
+      if (!isConnected || !accessToken || hasFetchedData.current) {
+        if (!isConnected || !accessToken) {
+          setError('Please connect your Spotify account first');
+          setLoading(false);
+        }
         return;
       }
 
       try {
         setLoading(true);
         setError(null);
+        hasFetchedData.current = true;
 
         // Fetch followed artists from Spotify
         const response = await fetch(
@@ -150,8 +114,7 @@ export default function ListPage() {
           );
         }
 
-        const followedArtistsData: FollowedArtistsResponse =
-          await response.json();
+        const followedArtistsData: FollowedArtistsResponse = await response.json();
 
         if (!followedArtistsData.success || !followedArtistsData.data) {
           throw new Error('No followed artists data received');
@@ -160,84 +123,164 @@ export default function ListPage() {
         // Check if this is fallback data
         setIsFallback(followedArtistsData.fallback || false);
 
-        // Process the followed artists data
-        const artistData: ArtistWithFunding[] = followedArtistsData.data.map(
-          (spotifyData) => {
-            // Get pool status from contract (will be updated after contract calls)
-            const poolStatus = poolStatuses[spotifyData.id] || 'no-pool';
-            const poolAddress = poolAddresses[spotifyData.id] || undefined;
-            
-            // Get real pool data or use defaults
-            const poolInfo = poolData[spotifyData.id] || {
-              lpTokens: '0.00',
-              lpBalance: '$0.00',
-            };
-
-            return {
-              id: spotifyData.id,
-              name: spotifyData.name,
-              status: poolStatus,
-              genre: spotifyData.genres[0] || 'Unknown',
-              followers: spotifyData.followers.total.toLocaleString(),
-              popularity: spotifyData.popularity,
-              lpTokens: poolInfo.lpTokens,
-              lpBalance: poolInfo.lpBalance,
-              buttonText:
-                poolStatus === 'active'
-                  ? 'View Investment'
-                  : 'Fund Artist',
-              imageUrl:
-                spotifyData.images[0]?.url ||
-                'https://via.placeholder.com/400x300?text=No+Image',
-              poolAddress,
-            };
-          }
-        );
+        // Create initial artist data with default pool info
+        const artistData = createInitialArtistData(followedArtistsData.data);
 
         if (artistData.length === 0) {
           setError('You are not following any artists on Spotify');
         } else {
           setArtists(artistData);
-          // Check pool statuses for all artists
-          const artistIds = artistData.map(artist => artist.id);
-          checkPoolStatuses(artistIds);
         }
       } catch (err) {
         console.error('Error fetching followed artists:', err);
         setError(
           err instanceof Error ? err.message : 'Failed to load followed artists'
         );
+        hasFetchedData.current = false; // Reset on error to allow retry
       } finally {
         setLoading(false);
       }
     };
 
     fetchFollowedArtists();
-  }, [accessToken, isConnected]);
+  }, [accessToken, isConnected, createInitialArtistData]);
 
-  // Update artists when pool statuses and data change
+  // Reset fetch flag when access token changes
+  useEffect(() => {
+    hasFetchedData.current = false;
+    hasCheckedPools.current = false;
+    lastArtistIds.current = [];
+  }, [accessToken]);
+
+  // Check pool statuses when artists are loaded
+  useEffect(() => {
+    if (artists.length > 0 && !isCheckingPools && !hasCheckedPools.current) {
+      const artistIds = artists.map(artist => artist.id);
+      
+      // Check if we've already processed these exact artist IDs
+      const artistIdsChanged = JSON.stringify(artistIds) !== JSON.stringify(lastArtistIds.current);
+      
+      if (artistIdsChanged) {
+        lastArtistIds.current = artistIds;
+        hasCheckedPools.current = true;
+        
+        // Call the pool checking logic directly to avoid dependency issues
+        const checkPools = async () => {
+          if (artistIds.length === 0) return;
+          
+          setIsCheckingPools(true);
+          const statuses: Record<string, 'active' | 'no-pool'> = {};
+          const addresses: Record<string, string> = {};
+          const poolInfo: Record<string, { lpTokens: string; lpBalance: string }> = {};
+          
+          // Process artists in batches to avoid overwhelming the RPC
+          const batchSize = 5;
+          for (let i = 0; i < artistIds.length; i += batchSize) {
+            const batch = artistIds.slice(i, i + batchSize);
+            
+            // Process batch in parallel
+            await Promise.allSettled(
+              batch.map(async (artistId) => {
+                try {
+                  // Check if pool exists
+                  const poolExists = await hasPool(artistId);
+                  statuses[artistId] = poolExists ? 'active' : 'no-pool';
+                  
+                  if (poolExists) {
+                    // Get pool info from factory
+                    const poolInfoData = await getPoolInfo(artistId);
+                    addresses[artistId] = poolInfoData.poolAddress;
+                    
+                    // Get detailed pool data from pool contract
+                    if (poolInfoData.poolAddress && poolInfoData.poolAddress !== '0x0000000000000000000000000000000000000000') {
+                      try {
+                        const poolDetails = await getPoolDetails(poolInfoData.poolAddress);
+                        // Convert bigint values to formatted strings
+                        const totalSupply = weiToUsdc(poolDetails.totalSupplyAmount);
+                        const totalUSDC = weiToUsdc(poolDetails.totalUSDCAmount);
+                      
+                        poolInfo[artistId] = {
+                          lpTokens: totalSupply.toFixed(2),
+                          lpBalance: `$${totalUSDC.toFixed(2)}`,
+                        };
+                      } catch (poolErr) {
+                        console.error(`Error getting pool details for artist ${artistId}:`, poolErr);
+                        // Fallback to mock data if pool details fail
+                        poolInfo[artistId] = {
+                          lpTokens: '0.00',
+                          lpBalance: '$0.00',
+                        };
+                      }
+                    }
+                  } else {
+                    // No pool exists, use default values
+                    poolInfo[artistId] = {
+                      lpTokens: '0.00',
+                      lpBalance: '$0.00',
+                    };
+                  }
+                } catch (err) {
+                  console.error(`Error checking pool for artist ${artistId}:`, err);
+                  statuses[artistId] = 'no-pool'; // Default to no-pool on error
+                  poolInfo[artistId] = {
+                    lpTokens: '0.00',
+                    lpBalance: '$0.00',
+                  };
+                }
+              })
+            );
+          }
+          
+          setPoolStatuses(statuses);
+          setPoolAddresses(addresses);
+          setPoolData(poolInfo);
+          setIsCheckingPools(false);
+        };
+        
+        checkPools();
+      }
+    }
+  }, [artists.length, isCheckingPools]);
+
+  // Update artists when pool data changes (without causing infinite loops)
   useEffect(() => {
     if (artists.length > 0 && Object.keys(poolStatuses).length > 0) {
-      setArtists(prevArtists => 
-        prevArtists.map(artist => {
-          const poolStatus = poolStatuses[artist.id] || 'no-pool';
-          const poolInfo = poolData[artist.id] || { lpTokens: '0.00', lpBalance: '$0.00' };
-          const poolAddress = poolAddresses[artist.id] || undefined;
-          
-          return {
-            ...artist,
-            status: poolStatus,
-            buttonText: poolStatus === 'active' ? 'View Investment' : 'Fund Artist',
-            lpTokens: poolInfo.lpTokens,
-            lpBalance: poolInfo.lpBalance,
-            poolAddress,
-          };
-        })
-      );
+      const updatedArtists = artists.map(artist => {
+        const poolStatus = poolStatuses[artist.id] || 'no-pool';
+        const poolInfo = poolData[artist.id] || { lpTokens: '0.00', lpBalance: '$0.00' };
+        const poolAddress = poolAddresses[artist.id] || undefined;
+        
+        return {
+          ...artist,
+          status: poolStatus,
+          buttonText: poolStatus === 'active' ? 'View Investment' : 'Fund Artist',
+          lpTokens: poolInfo.lpTokens,
+          lpBalance: poolInfo.lpBalance,
+          poolAddress,
+        };
+      });
+      
+      // Only update if there are actual changes
+      const hasChanges = updatedArtists.some((updated, index) => {
+        const original = artists[index];
+        return (
+          updated.status !== original.status ||
+          updated.lpTokens !== original.lpTokens ||
+          updated.lpBalance !== original.lpBalance ||
+          updated.poolAddress !== original.poolAddress
+        );
+      });
+      
+      if (hasChanges) {
+        setArtists(updatedArtists);
+      }
     }
-  }, [poolStatuses, poolData, poolAddresses, artists.length]);
+  }, [poolStatuses, poolData, poolAddresses]); // Removed artists.length from dependencies
 
-  if (loading || contractLoading) {
+  // Memoize the artists array to prevent unnecessary re-renders
+  const memoizedArtists = useMemo(() => artists, [artists]);
+
+  if (loading || contractLoading || isCheckingPools) {
     return (
       <div className="min-h-screen bg-gray-50">
         <HeroSection />
@@ -246,7 +289,12 @@ export default function ListPage() {
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
               <p className="mt-4 text-gray-600">
-                {loading ? 'Loading your followed artists from Spotify...' : 'Checking pool statuses...'}
+                {loading 
+                  ? 'Loading your followed artists from Spotify...' 
+                  : isCheckingPools 
+                    ? 'Checking pool statuses...' 
+                    : 'Loading...'
+                }
               </p>
             </div>
           </div>
@@ -336,8 +384,8 @@ export default function ListPage() {
           <p className="text-lg text-gray-600">Discover and fund your favorite artists</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {artists.map((artist) => (
-            <ArtistCard
+          {memoizedArtists.map((artist) => (
+            <MemoizedArtistCard
               key={artist.id}
               id={artist.id}
               name={artist.name}
