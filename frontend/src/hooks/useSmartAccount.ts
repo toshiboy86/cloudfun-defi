@@ -176,6 +176,7 @@ export function useSmartAccount() {
         to: '0x386Ab4CA67f7AbFd8d1095674bd6F55a4b9EE29D',
         value: 0n,
         data: '0x',
+        gasLimit: 21000n, // Set a reasonable gas limit for simple transfer
       });
 
       console.log('Test transaction successful:', txHash);

@@ -2,8 +2,8 @@
 
 import { useState, use, useEffect } from 'react';
 import { ArtistProfile } from '../../../../components/ArtistProfile';
-import { ArtistFunding } from '../../../../components/ArtistFunding';
 import { ArtistClaim } from '@/components/ArtistClaim';
+import { useFanVestFactory } from '@/hooks/useFanVestFactory';
 
 interface ArtistDetailPageProps {
   params: Promise<{
@@ -42,7 +42,10 @@ export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
   const [artist, setArtist] = useState<SpotifyArtistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [poolAddress, setPoolAddress] = useState<string | null>(null);
   const { id } = use(params);
+
+  const { getPoolAddress } = useFanVestFactory();
 
   useEffect(() => {
     const fetchArtistData = async () => {
@@ -78,6 +81,21 @@ export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
       fetchArtistData();
     }
   }, [id]);
+
+  useEffect(() => {
+    const fetchPoolAddress = async () => {
+      try {
+        if (id) {
+          const address = await getPoolAddress(id);
+          setPoolAddress(address);
+        }
+      } catch (err) {
+        console.error('Error fetching pool address:', err);
+      }
+    };
+
+    fetchPoolAddress();
+  }, [id, getPoolAddress]);
 
   const handleFundArtist = () => {
     if (!artist) return;
@@ -163,6 +181,7 @@ export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
             claimAmount={'claimAmount'}
             onClaimAmountChange={() => {}}
             onClaimFunds={handleFundArtist}
+            poolAddress={poolAddress || undefined}
           />
         </div>
       </div>

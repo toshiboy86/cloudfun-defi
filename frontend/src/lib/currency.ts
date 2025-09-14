@@ -3,9 +3,9 @@ export function usdcToWei(amount: number): bigint {
     return BigInt(amount * 1000000); // USDC has 6 decimals
   }
   
-  // Helper function to convert GHO amount to wei (18 decimals)
-  export function ghoToWei(amount: number): bigint {
-    return BigInt(amount * 1000000000000000000); // GHO has 18 decimals
+  // Helper function to convert AAVE amount to wei (18 decimals)
+  export function aaveToWei(amount: number): bigint {
+    return BigInt(amount * 1000000000000000000);
   }
 
 

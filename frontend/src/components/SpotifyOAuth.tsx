@@ -19,7 +19,7 @@ export function SpotifyOAuth() {
   // Spotify OAuth configuration
   const CLIENT_ID =
     process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || 'your-spotify-client-id';
-  const REDIRECT_URI = 'https://ceb66ac2d8c2.ngrok-free.app';
+  const REDIRECT_URI = 'https://local.cloudfund.fi:8023';
   // typeof window !== 'undefined' ? window.location.origin : '';
   const SCOPE =
     'user-read-private user-read-email user-library-read user-top-read user-read-recently-played user-read-playback-state user-modify-playback-state playlist-read-private playlist-read-collaborative user-follow-read';

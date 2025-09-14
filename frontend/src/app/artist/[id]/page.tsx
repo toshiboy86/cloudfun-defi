@@ -5,7 +5,10 @@ import { ArtistProfile } from '../../../components/ArtistProfile';
 import { ArtistFunding } from '../../../components/ArtistFunding';
 import { useFanVestFactory } from '../../../hooks/useFanVestFactory';
 import { useFanVestPool } from '../../../hooks/useFanVestPool';
-import { weiToUsdc } from '../../../lib/currency';
+import { weiToUsdc, usdcToWei } from '../../../lib/currency';
+import { usePrivy, useSendTransaction, useWallets } from '@privy-io/react-auth';
+import { CONTRACT_ADDRESSES } from '../../../config/contracts';
+import { executeFundingTransaction } from '../../../lib/transactions';
 
 interface ArtistDetailPageProps {
   params: Promise<{
@@ -46,6 +49,7 @@ interface PoolData {
   totalUSDC: string;
   tokenName?: string;
   tokenSymbol?: string;
+  earnedInterest?: string;
 }
 
 export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
@@ -55,10 +59,15 @@ export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [poolData, setPoolData] = useState<PoolData | null>(null);
   const [poolLoading, setPoolLoading] = useState(false);
+  const [isFunding, setIsFunding] = useState(false);
+  const [fundingError, setFundingError] = useState<string | null>(null);
   const { id } = use(params);
   
   const { hasPool, getPoolInfo, isLoading: contractLoading } = useFanVestFactory();
   const { getPoolInfo: getPoolDetails } = useFanVestPool();
+  const { ready, authenticated, user, login } = usePrivy();
+  const { sendTransaction } = useSendTransaction();
+  const { wallets } = useWallets();
 
   // Function to fetch pool data for the artist
   const fetchPoolData = async (artistId: string) => {
@@ -152,14 +161,50 @@ export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
     }
   }, [id]);
 
-  const handleFundArtist = () => {
+
+  // Function to execute the funding transaction using Privy
+
+  const handleFundArtist = async () => {
     if (!artist) return;
 
-    if (parseFloat(fundAmount) > 0) {
-      alert(`Funding ${artist.name} with $${fundAmount} USDC!`);
-      // In a real app, this would trigger the actual funding transaction
-    } else {
+    if (!authenticated) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    if (!poolData?.exists) {
+      alert('Pool does not exist for this artist. Please create a pool first.');
+      return;
+    }
+
+    if (parseFloat(fundAmount) <= 0) {
       alert('Please enter a valid amount to fund');
+      return;
+    }
+
+    try {
+      setIsFunding(true);
+      setFundingError(null);
+
+      const result = await executeFundingTransaction({
+        poolAddress: poolData.poolAddress!,
+        fundAmount,
+        sendTransaction,
+      });
+      
+      console.log('Funding transaction completed:', result);
+      alert(`Successfully funded ${artist.name} with $${fundAmount} USDC!`);
+      
+      // Refresh pool data after successful funding
+      await fetchPoolData(id);
+      
+    } catch (err) {
+      console.error('Funding transaction failed:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
+      setFundingError(errorMessage);
+      alert(`Funding failed: ${errorMessage}`);
+    } finally {
+      setIsFunding(false);
     }
   };
 
@@ -235,10 +280,16 @@ export default function ArtistDetailPage({ params }: ArtistDetailPageProps) {
           {/* Right Column - Funding Section */}
           <ArtistFunding
             artistName={artist.name}
+            artistId={artist.id}
             fundAmount={fundAmount}
             onFundAmountChange={handleFundAmountChange}
             onFundArtist={handleFundArtist}
             poolData={poolData}
+            isFunding={isFunding}
+            fundingError={fundingError}
+            isAuthenticated={authenticated}
+            onLogin={login}
+            onPoolCreated={() => fetchPoolData(id)}
           />
         </div>
       </div>

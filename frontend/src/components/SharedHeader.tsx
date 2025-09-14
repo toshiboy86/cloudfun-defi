@@ -1,18 +1,25 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSpotify } from '../contexts/SpotifyContext';
 import { formatAddressForDisplay } from '../lib/address';
+import { useEthBalance } from '../hooks/useEthBalance';
+import { useLPTokenBalance } from '../hooks/useLPTokenBalance';
+import { useDepositTokenBalance } from '../hooks/useDepositTokenBalance';
 
 interface SharedHeaderProps {
   showBackButton?: boolean;
+  poolAddress?: string;
 }
 
-export function SharedHeader({ showBackButton = false }: SharedHeaderProps) {
+export function SharedHeader({ showBackButton = false, poolAddress }: SharedHeaderProps) {
   const router = useRouter();
   const { user, logout: logoutWallet } = usePrivy();
+  
   const { setAccessToken } = useSpotify();
+  const { balance: ethBalance, loading: ethLoading } = useEthBalance();
+  const { balance: ausdcBalance, loading: ausdcLoading } = useDepositTokenBalance();
 
   const handleBackClick = () => {
     router.back();
@@ -86,13 +93,68 @@ export function SharedHeader({ showBackButton = false }: SharedHeaderProps) {
               d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
             />
           </svg>
-          <span className="text-sm font-medium text-gray-700">
-            Wallet {formatAddressForDisplay(user?.wallet?.address)}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500">Wallet</span>
+            <span className="text-sm font-medium text-gray-700">
+              {formatAddressForDisplay(user?.wallet?.address)}
+            </span>
+          </div>
+          {user?.wallet?.address && (
+            <a
+              href={`https://sepolia.etherscan.io/address/${user.wallet.address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-2 p-1 hover:bg-gray-200 rounded transition-colors"
+              title="View on Sepolia Etherscan"
+            >
+              <svg
+                className="w-4 h-4 text-gray-500 hover:text-gray-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
+          )}
         </div>
-        <div className="flex items-center space-x-2 bg-orange-100 px-4 py-2 rounded-lg">
-          <span className="text-sm font-medium text-orange-800">LP Tokens</span>
-          <span className="text-sm font-bold text-orange-900">127.50</span>
+        
+        {/* ETH Balance */}
+        <div className="flex items-center space-x-2 bg-blue-100 px-4 py-2 rounded-lg">
+          <svg
+            className="w-5 h-5 text-blue-600"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M10 2L3 7v11h14V7l-7-5zM8 15v-3h4v3H8z"/>
+          </svg>
+          <div className="flex flex-col">
+            <span className="text-xs text-blue-600">ETH (Sepolia)</span>
+            <span className="text-sm font-bold text-blue-800">
+              {ethLoading ? '...' : `${ethBalance} ETH`}
+            </span>
+          </div>
+        </div>
+         {/* AAVE Balance */}
+         <div className="flex items-center space-x-2 bg-green-100 px-4 py-2 rounded-lg">
+          <svg
+            className="w-5 h-5 text-green-600"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/>
+          </svg>
+          <div className="flex flex-col">
+            <span className="text-xs text-green-600">Aave</span>
+            <span className="text-sm font-bold text-green-800">
+              {ausdcLoading ? '...' : `${ausdcBalance} AAVE`}
+            </span>
+          </div>
         </div>
 
         {/* Logout Button */}

@@ -16,6 +16,7 @@ export interface PoolDetails {
   tokenSymbol: string;
   totalUSDCAmount: bigint;
   totalSupplyAmount: bigint;
+  earnedInterest: bigint;
 }
 
 export function useFanVestPool(poolAddress?: string) {
@@ -260,6 +261,34 @@ export function useFanVestPool(poolAddress?: string) {
     }
   };
 
+  /**
+   * Claim all USDC and earned interest (admin only)
+   * @param poolAddress - The pool contract address (optional if provided in hook)
+   * @returns Promise<string> - Transaction hash
+   */
+  const claim = async (address?: string): Promise<string> => {
+    const targetAddress = address || poolAddress;
+    
+    if (!targetAddress || targetAddress === '0x0000000000000000000000000000000000000000') {
+      throw new Error('Pool address is required');
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // This would need to be implemented with a wallet client for write operations
+      // For now, we'll throw an error indicating this needs to be implemented
+      throw new Error('Claim function requires wallet client - use executeClaimTransaction instead');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to claim funds';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     getPoolInfo,
     getPoolUSDCBalance,
@@ -268,6 +297,7 @@ export function useFanVestPool(poolAddress?: string) {
     getTokenName,
     getTokenSymbol,
     getTotalSupply,
+    claim,
     isLoading,
     error,
   };

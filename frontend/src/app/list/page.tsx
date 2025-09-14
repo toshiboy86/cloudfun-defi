@@ -61,7 +61,6 @@ export default function ListPage() {
   const { hasPool, getPoolInfo, isLoading: contractLoading } = useFanVestFactory();
   const { getPoolInfo: getPoolDetails } = useFanVestPool();
 
-
   // Function to check pool status and get pool data for all artists
   const checkPoolStatuses = async (artistIds: string[]) => {
     const statuses: Record<string, 'active' | 'no-pool'> = {};
@@ -332,6 +331,10 @@ export default function ListPage() {
 
       {/* Artist Cards Section */}
       <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Following Artists</h2>
+          <p className="text-lg text-gray-600">Discover and fund your favorite artists</p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {artists.map((artist) => (
             <ArtistCard

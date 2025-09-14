@@ -11,11 +11,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         // Support MetaMask and other wallets
         loginMethods: [
           'wallet',
-          'email',
-          'google',
-          'twitter',
-          'farcaster',
-          'spotify',
+          // 'email',
+          // 'google',
+          // 'twitter',
+          // 'farcaster',
+          // 'spotify',
         ],
         appearance: {
           theme: 'light',

@@ -70,6 +70,7 @@ export function useFanVestFactory() {
         functionName: 'getPoolInfo',
         args: [artistId],
       });
+      console.log(result)
 
       const [poolAddress, exists] = result as [string, boolean];
       

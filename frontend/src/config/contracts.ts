@@ -5,16 +5,16 @@
 
 export const CONTRACT_ADDRESSES = {
   // FanVestFactory contract address
-  FANVEST_FACTORY: process.env.NEXT_PUBLIC_FANVEST_FACTORY_ADDRESS || '0x0000000000000000000000000000000000000000',
-  
-  // USDC token address (Sepolia testnet)
-  USDC: process.env.NEXT_PUBLIC_USDC_ADDRESS || '0x0000000000000000000000000000000000000000',
-  
-  // Aave V3 Pool address (Sepolia testnet)
-  AAVE_POOL: process.env.NEXT_PUBLIC_AAVE_POOL_ADDRESS || '0x0000000000000000000000000000000000000000',
-  
+  FANVEST_FACTORY: process.env.NEXT_PUBLIC_FANVEST_FACTORY_ADDRESS,
+  // Deposit token address (Sepolia testnet) - used for deposits
+  DEPOSIT_TOKEN: process.env.NEXT_PUBLIC_DEPOSIT_TOKEN_ADDRESS,
   // Aave aUSDC token address (Sepolia testnet)
-  AUSDC: process.env.NEXT_PUBLIC_AUSDC_ADDRESS || '0x0000000000000000000000000000000000000000',
+  LP_Token: process.env.NEXT_PUBLIC_LP_ADDRESS,
+  // Aave V3 Pool address (Sepolia testnet)
+  AAVE_POOL: process.env.NEXT_PUBLIC_AAVE_POOL_ADDRESS,
+  // Aave aUSDC token address (Sepolia testnet)
+  AUSDC: process.env.NEXT_PUBLIC_AUSDC_ADDRESS,
+  ADMIN_ADDRESS: process.env.NEXT_PUBLIC_ADMIN_ADDRESS
 } as const;
 
 export const RPC_URLS = {
@@ -38,8 +38,8 @@ export function validateContractConfig(): { isValid: boolean; missingAddresses: 
     missingAddresses.push('FANVEST_FACTORY');
   }
   
-  if (CONTRACT_ADDRESSES.USDC === '0x0000000000000000000000000000000000000000') {
-    missingAddresses.push('USDC');
+  if (CONTRACT_ADDRESSES.DEPOSIT_TOKEN === '0x0000000000000000000000000000000000000000') {
+    missingAddresses.push('DEPOSIT_TOKEN');
   }
   
   if (CONTRACT_ADDRESSES.AAVE_POOL === '0x0000000000000000000000000000000000000000') {

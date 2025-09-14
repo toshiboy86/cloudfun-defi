@@ -1,14 +1,12 @@
 interface ClaimOverviewCardsProps {
   availableToClaim: string;
   interestEarned: string;
-  fundingFans: string;
   yourClaimTokens: string;
 }
 
 export function ClaimOverviewCards({
   availableToClaim,
   interestEarned,
-  fundingFans,
   yourClaimTokens,
 }: ClaimOverviewCardsProps) {
   return (
@@ -35,7 +33,7 @@ export function ClaimOverviewCards({
                 Available to Claim
               </p>
               <p className="text-2xl font-bold text-emerald-900">
-                {availableToClaim}
+                {(availableToClaim)}
               </p>
               <p className="text-xs text-emerald-600 mt-1">
                 Collected by your fans - ready for withdrawal
@@ -64,33 +62,13 @@ export function ClaimOverviewCards({
             <div>
               <p className="text-sm text-gray-500">Interest Earned</p>
               <p className="text-2xl font-bold text-gray-900">
-                {interestEarned}
+                0
               </p>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Claim Status Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white p-6 rounded-2xl shadow-lg">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-              <svg
-                className="w-5 h-5 text-amber-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Funding Fans</p>
-              <p className="text-2xl font-bold text-gray-900">{fundingFans}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+     
     </>
   );
 }

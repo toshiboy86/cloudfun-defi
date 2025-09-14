@@ -1,10 +1,16 @@
+import { useState, useEffect } from 'react';
+import { useFanVestPool } from '@/hooks/useFanVestPool';
 import { ClaimOverviewCards } from './ClaimOverviewCards';
+import { weiToUsdc } from '@/lib/currency';
+import { executeClaimTransaction } from '@/lib/transactions';
+import { useSendTransaction } from '@privy-io/react-auth';
 
 interface ArtistClaimProps {
   artistName: string;
   claimAmount: string;
   onClaimAmountChange: (amount: string) => void;
   onClaimFunds: () => void;
+  poolAddress?: string;
 }
 
 export function ArtistClaim({
@@ -12,22 +18,74 @@ export function ArtistClaim({
   claimAmount,
   onClaimAmountChange,
   onClaimFunds,
+  poolAddress,
 }: ArtistClaimProps) {
+  const { getPoolInfo, isLoading, error } = useFanVestPool(poolAddress);
+  const [poolInfo, setPoolInfo] = useState<any>(null);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
+  const { sendTransaction } = useSendTransaction();
+
+  useEffect(() => {
+    const fetchPoolInfo = async () => {
+      if (poolAddress) {
+        try {
+          const info = await getPoolInfo();
+          setPoolInfo(info);
+        } catch (err) {
+          console.error('Error fetching pool info:', err);
+        }
+      }
+    };
+
+    fetchPoolInfo();
+  }, [poolAddress, getPoolInfo]);
+
+  const handleClaim = async () => {
+    if (!poolAddress) {
+      setClaimError('Pool address is required');
+      return;
+    }
+
+    setIsClaiming(true);
+    setClaimError(null);
+    setClaimSuccess(null);
+
+    try {
+      const result = await executeClaimTransaction({
+        poolAddress,
+        sendTransaction,
+      });
+
+      setClaimSuccess(`Successfully claimed funds! Transaction: ${result.claimTx}`);
+      console.log('Claim transaction completed:', result);
+      
+      // Refresh pool info after successful claim
+      const info = await getPoolInfo();
+      setPoolInfo(info);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to claim funds';
+      setClaimError(errorMessage);
+      console.error('Claim error:', err);
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
   // Mock claim data - in a real app, this would come from your smart contracts
-  const mockClaimData = {
-    availableToClaim: '$12,450.75',
-    interestEarned: '$8,230.25',
-    fundingFans: '89',
-    yourClaimTokens: '89.25',
+  const data = {
+    availableToClaim: `$${weiToUsdc(poolInfo?.totalUSDCAmount || '0')}`,
+    interestEarned: `$${poolInfo?.earnedInterest || '0'}`,
+    yourClaimTokens: poolInfo?.totalSupplyAmount || 0,
   };
 
   return (
     <div className="space-y-8">
       <ClaimOverviewCards
-        availableToClaim={mockClaimData.availableToClaim}
-        interestEarned={mockClaimData.interestEarned}
-        fundingFans={mockClaimData.fundingFans}
-        yourClaimTokens={mockClaimData.yourClaimTokens}
+        availableToClaim={data.availableToClaim}
+        interestEarned={data.interestEarned}
+        yourClaimTokens={data.yourClaimTokens}
       />
 
       {/* Claim Funds Section */}
@@ -38,7 +96,7 @@ export function ArtistClaim({
           </h2>
           <div className="bg-emerald-100 px-4 py-2 rounded-full">
             <span className="text-emerald-800 font-medium text-sm">
-              {mockClaimData.availableToClaim} Available
+              {data.availableToClaim} Available
             </span>
           </div>
         </div>
@@ -77,7 +135,7 @@ export function ArtistClaim({
                     Available to Claim:
                   </span>
                   <span className="font-bold text-emerald-900 text-lg">
-                    {mockClaimData.availableToClaim}
+                    {data.availableToClaim}
                   </span>
                 </div>
                 <p className="text-xs text-emerald-700 mt-1">
@@ -96,7 +154,7 @@ export function ArtistClaim({
                   $
                   {(
                     parseFloat(
-                      mockClaimData.availableToClaim
+                      data.availableToClaim
                         .replace('$', '')
                         .replace(',', '')
                     ) - parseFloat(claimAmount || '0')
@@ -106,12 +164,47 @@ export function ArtistClaim({
             </div>
           </div>
 
+          {/* Error Message */}
+          {claimError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+              <div className="flex items-center">
+                <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                  <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="text-red-800 text-sm font-medium">{claimError}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {claimSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+              <div className="flex items-center">
+                <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                  <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="text-green-800 text-sm font-medium">{claimSuccess}</p>
+              </div>
+            </div>
+          )}
+
           <button
-            onClick={onClaimFunds}
-            disabled={!claimAmount || parseFloat(claimAmount) <= 0}
+            onClick={handleClaim}
+            disabled={isClaiming || !poolAddress || (poolInfo?.totalUSDCAmount || 0) <= 0}
             className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-4 px-6 rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg"
           >
-            Claim Funds
+            {isClaiming ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Claiming Funds...
+              </div>
+            ) : (
+              'Claim Funds'
+            )}
           </button>
         </div>
       </div>
