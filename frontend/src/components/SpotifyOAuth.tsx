@@ -151,23 +151,6 @@ export function SpotifyOAuth() {
               Access token: {accessToken.substring(0, 20)}...
             </p>
           </div>
-
-          <div className="space-y-2">
-            <button
-              onClick={testSpotifyAPI}
-              disabled={loading}
-              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded"
-            >
-              Test Spotify API
-            </button>
-
-            <button
-              onClick={logout}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-            >
-              Disconnect Spotify
-            </button>
-          </div>
         </div>
       ) : (
         <div className="text-center">
