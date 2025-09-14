@@ -21,9 +21,16 @@ contract FanVestFactory {
     // Mapping to check if a pool exists for an artist
     mapping(string => bool) public poolExists;
     
+    // Track unique holders across all pools
+    mapping(address => uint256) public holderTokenCount; // Maps holder address to number of different tokens they hold
+    address[] public uniqueHolders; // Array of all unique holders
+    mapping(address => bool) public isHolderTracked; // Track if holder is already in uniqueHolders array
+    
     // Events
     event PoolCreated(string indexed spotifyArtistId, address poolAddress, address creator);
     event PoolInfo(string spotifyArtistId, address poolAddress, string tokenName, string tokenSymbol);
+    event HolderAdded(address indexed holder, uint256 tokenCount);
+    event HolderUpdated(address indexed holder, uint256 newTokenCount);
 
     constructor(address _usdcTokenAddress, address _aavePoolAddress, address _aUSDCAddress) {
         require(_usdcTokenAddress != address(0), "Invalid USDC token address");

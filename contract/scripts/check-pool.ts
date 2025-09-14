@@ -23,20 +23,16 @@ async function main() {
 
     const clients = await getPublicClient("sepolia");
 
-    console.log(
-      "Using Sepolia account:",
-      clients!.walletClient!.account!.address,
-    );
     // await executeWithClients(publicClient, walletClient, account, __dirname);
-    // await depositPool(clients!.publicClient, [
-    //   clients!.walletClient,
-    //   clients!.fan2WalletClient,
-    // ]);
-    await claimPool(
-      clients!.publicClient,
+    await depositPool(clients!.publicClient, [
       clients!.walletClient,
-      clients!.artistWalletClient,
-    );
+      clients!.fan2WalletClient,
+    ]);
+    // await claimPool(
+    //   clients!.publicClient,
+    //   clients!.walletClient,
+    //   clients!.artistWalletClient,
+    // );
   }
 }
 

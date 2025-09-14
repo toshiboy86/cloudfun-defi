@@ -1,1 +1,1 @@
-export const poolArgs = ["3kzwYV3OCB010YfXMF0Avt", "Alvvays Fan LP", "ALVVA"];
+export const poolArgs = ["1vCWHaC5f2uS3yhpwWbIA6", "Alvvays Fan LP", "ALVVA"];

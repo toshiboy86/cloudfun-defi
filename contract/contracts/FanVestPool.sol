@@ -22,8 +22,9 @@ contract FanVestPool is ERC20, Ownable {
     string public spotifyArtistId;
     
     // Track total USDC deposited in this pool
-    uint256 public totalUSDC;    
-    
+    uint256 public totalUSDC;
+
+
     // Events
     event Deposit(address indexed user, uint256 usdcAmount, uint256 lpTokensMinted);
     event Withdraw(address indexed user, uint256 usdcAmount, uint256 lpTokensBurned);
@@ -137,6 +138,19 @@ contract FanVestPool is ERC20, Ownable {
         emit Withdraw(msg.sender, usdcToReturn, lpAmount);
     }
 
+
+    function _getEarnedInterest() internal view returns (uint256) {
+        uint256 totalAssets = getTotalAssets();
+         uint256 earnedInterest;
+        if (totalAssets >= totalUSDC) {
+            earnedInterest = totalAssets - totalUSDC;
+        } else {
+            earnedInterest = 0;
+        }
+        return earnedInterest;
+    }
+
+
     /**
      * @dev Claim all USDC and earned interest (admin only)
      * Transfers all USDC and earned interest to the admin (owner)
@@ -146,13 +160,8 @@ contract FanVestPool is ERC20, Ownable {
         require(totalAssets > 0, "No assets to claim");
         
         // Calculate earned interest (handle underflow case)
-        uint256 earnedInterest;
-        if (totalAssets >= totalUSDC) {
-            earnedInterest = totalAssets - totalUSDC;
-        } else {
-            // If totalAssets < totalUSDC, there's no earned interest (or even a small loss)
-            earnedInterest = 0;
-        }
+        uint256 earnedInterest = _getEarnedInterest();
+        
         
         // Withdraw all aUSDC from Aave (if any)
         uint256 aUSDCBalance = IERC20(aUSDCAddress).balanceOf(address(this));
@@ -214,9 +223,10 @@ contract FanVestPool is ERC20, Ownable {
         string memory tokenName,
         string memory tokenSymbol,
         uint256 totalUSDCAmount,
-        uint256 totalSupplyAmount
+        uint256 totalSupplyAmount,
+        uint256 earnedInterest
     ) {
-        return (spotifyArtistId, name(), symbol(), totalUSDC, totalSupply());
+        return (spotifyArtistId, name(), symbol(), totalUSDC, totalSupply(), _getEarnedInterest());
     }
 
     /**

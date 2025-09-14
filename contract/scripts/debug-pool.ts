@@ -123,6 +123,15 @@ async function debugPool() {
   console.log("Aave Pool Address:", aavePoolAddress);
   console.log("aUSDC Address:", aUSDCAddress);
 
+  // Check the actual usdcToken address that the pool is using
+  const usdcTokenAddress = await readContract(publicClient, {
+    address: poolAddress as `0x${string}`,
+    abi: poolArtifact.abi,
+    functionName: "usdcToken",
+  });
+
+  console.log("Pool usdcToken Address:", usdcTokenAddress);
+
   // Check if addresses are the same (this is likely the issue)
   if (aavePoolAddress === aUSDCAddress) {
     console.log("❌ ERROR: Aave Pool Address and aUSDC Address are the same!");

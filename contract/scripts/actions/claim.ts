@@ -2,7 +2,7 @@ import "dotenv/config";
 import { getArtifact } from "../../modules/pathResolver.js";
 import { readContract, writeContract } from "viem/actions";
 import { poolArgs } from "../../test/mockdata.js";
-import { ghoToWei, usdcToWei } from "../../modules/utils.js";
+import { aaveToWei, usdcToWei } from "../../modules/utils.js";
 
 const {
   SEPOLIA_RPC_URL,

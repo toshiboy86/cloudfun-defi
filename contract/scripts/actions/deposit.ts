@@ -3,7 +3,7 @@ import { getArtifact } from "../../modules/pathResolver.js";
 import { readContract, writeContract } from "viem/actions";
 import { poolArgs } from "../../test/mockdata.js";
 import { usdcAbi } from "../abi.js";
-import { usdcToWei, ghoToWei } from "../../modules/utils.js";
+import { usdcToWei, aaveToWei } from "../../modules/utils.js";
 
 const { DEPOSIT_TOKEN_ADDRESS, FAN_VEST_FACTORY_ADDRESS } = process.env;
 
@@ -23,13 +23,13 @@ export async function depositPool(publicClient: any, walletClients: any[]) {
 
   console.log("Pool address:", poolAddress);
 
-  const depositAmount = ghoToWei(1.5); // 3 GHO (18 decimals)
+  const depositAmount = aaveToWei(1.5);
   console.log("depositAmount", depositAmount);
 
-  const depositAddress = DEPOSIT_TOKEN_ADDRESS as `0x${string}`; // GHO on Sepolia
+  const depositAddress = DEPOSIT_TOKEN_ADDRESS as `0x${string}`;
 
   // Process each wallet client
-  for (let i = 0; i < walletClients.length; i++) {
+  for (let i = 0; i < walletClients.length-1; i++) {
     const walletClient = walletClients[i];
     const account = walletClient.account;
 
@@ -38,16 +38,18 @@ export async function depositPool(publicClient: any, walletClients: any[]) {
     );
 
     try {
-      // First, we need to approve the pool contract to spend GHO
-      console.log("Approving GHO spending...");
-      const approveTx = await writeContract(walletClient, {
+      console.log("Approving AAVE spending...");
+      const paramsApprove = {
         account,
         address: depositAddress as `0x${string}`,
         abi: usdcAbi,
         functionName: "approve",
         args: [poolAddress, depositAmount],
         chain: walletClient.chain,
-      });
+      }
+      const { abi, ...forprintApprove } = paramsApprove;
+      console.log("forprintApprove", JSON.stringify(forprintApprove));
+      const approveTx = await writeContract(walletClient, paramsApprove);
 
       console.log("Approval transaction hash:", approveTx);
 
@@ -59,14 +61,17 @@ export async function depositPool(publicClient: any, walletClients: any[]) {
 
       // Now deposit to the pool
       console.log("Depositing to pool...");
-      const tx = await writeContract(walletClient, {
+      const paramsDeposit = {
         account,
         address: poolAddress as `0x${string}`,
         abi: poolArtifact.abi,
         functionName: "deposit",
         args: [depositAmount],
         chain: walletClient.chain,
-      });
+      }
+      const { abi: newabi, ...forprintDeposit } = paramsDeposit;
+      console.log("forprintDeposit", JSON.stringify(forprintDeposit));
+      const tx = await writeContract(walletClient, paramsDeposit);
 
       console.log("Transaction hash:", tx);
 
