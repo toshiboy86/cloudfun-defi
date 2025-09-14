@@ -11,7 +11,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         // Support MetaMask and other wallets
         loginMethods: [
           'wallet',
-          // 'email',
+          'email',
           // 'google',
           // 'twitter',
           // 'farcaster',
