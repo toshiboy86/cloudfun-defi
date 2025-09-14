@@ -4,7 +4,29 @@ A decentralized crowdfunding platform that allows fans to collectively invest in
 
 ## 🎵 Project Overview
 
-FanVest Protocol transforms passive music fans into active stakeholders by creating a transparent, mutually beneficial economic model for the music industry. Fans can pool funds to support their favorite artists while earning interest through DeFi protocols and sharing in the artist's future streaming success.
+FanVest is a decentralized crowdfunding platform that transforms fans from passive listeners into active stakeholders in an artist's success. We empower communities to collectively fund the artists they believe in, creating a new, transparent, and mutually beneficial economic model for the music industry
+
+## 🏗️ Architecture
+
+![FanVest Protocol Architecture](./frontend/public/architecgure.png)
+
+## How It Works:
+
+**Fans Pool Capital**: 
+
+Fans discover an indie artist on the platform and contribute stablecoins (like USDC) to their funding pool. In return, they receive Fan LP tokens, representing their share of the pool's assets.   
+
+**DeFi-Powered Growth**: 
+
+The pooled capital is automatically deposited into a trusted, low-risk DeFi lending protocol (like Aave) to earn interest. This allows the community's treasury to grow passively, creating a larger funding amount for the artist.   
+
+**Funding the Artist**: 
+
+Once the campaign goal is met, the artist claims the entire fund—both the principal contributions and the accrued interest—to finance their next album, tour, or project.   
+
+**Sharing in the Success**: 
+
+In exchange for the capital, the fan pool receives a tokenized share of the artist's future streaming royalties. As the artist's music generates revenue, those earnings are distributed back to the fans who hold the LP tokens, rewarding them for their early belief and investment.   
 
 ### Core Features
 
@@ -12,13 +34,11 @@ FanVest Protocol transforms passive music fans into active stakeholders by creat
 - **Fan LP Tokens**: Receive tokenized shares representing your stake in an artist's funding pool
 - **DeFi Integration**: Automatic yield generation through Aave V3 lending protocol
 - **Spotify Integration**: Discover and invest in artists from your personal playlists
-- **Smart Wallet Support**: Account abstraction with gasless transactions via Privy and ZeroDev
-- **Cross-chain Capabilities**: Multi-chain support with LiFi integration for seamless swaps
 - **Oracle Data**: Real-time artist metrics and popularity data from Spotify
 - **Smart Contract Security**: Built on Ethereum with OpenZeppelin standards
 - **Artist Claims**: Artists can claim pooled funds plus earned interest for their projects
 
-## 🏗️ Architecture
+## 🏗️ Structure
 
 The project consists of three main components:
 
@@ -34,14 +54,21 @@ The project consists of three main components:
 - **Spotify API Integration** for artist discovery and oracle data
 - **Smart Contract Interaction** via Viem with custom hooks
 - **Real-time Balance Tracking** and transaction management
-- **Cross-chain Swapping** via LiFi integration
-- **Gasless Transactions** with Pimlico paymaster
 
 ### 3. Development Tools
 - **Hardhat 3** for smart contract development and testing
 - **TypeScript** throughout the entire stack
 - **Viem** for Ethereum interactions
-- **Foundry** compatible testing
+
+### Note
+
+Please use AAVE token in Sepolia network, since other major tokens like USDC and USDT are not available as the the amount in the liquidity pool reaches to the cap limit.
+
+You can get the faucet here: https://gho.aave.com/faucet/
+
+## Artist Claim
+
+Visit `artist/{artistIdFromSpotify}/claim` to claim the funds.
 
 ## 🚀 Quick Start
 
@@ -87,7 +114,6 @@ The project consists of three main components:
 ```bash
 cd contract
 pnpm hardhat compile
-pnpm hardhat test
 pnpm hardhat ignition deploy ignition/modules/deploymentSepoliaV7.ts --network sepolia
 ```
 
@@ -144,20 +170,6 @@ spodi-fi/
 │   │   └── lib/           # Utility functions
 │   └── public/            # Static assets
 └── README.md              # This file
-```
-
-## 🔧 Available Scripts
-
-### Contract Scripts
-```bash
-# Compile contracts
-pnpm contract:compile
-
-# Run tests
-npx hardhat test
-
-# Deploy to Sepolia
-pnpm contract:redeploy:sepolia
 ```
 
 ### Frontend Scripts
