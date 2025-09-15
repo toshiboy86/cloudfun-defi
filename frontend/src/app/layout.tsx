@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Balance Aggregator - Smart Wallet DApp',
+  title: 'FanVest - Defi Funding Platform',
   description:
-    'Cross-chain balance aggregation and swapping with smart wallet technology',
+    'FanVest is a decentralized crowdfunding platform that allows fans to collectively invest in their favorite musicians and share in their future success through tokenized streaming royalties.',
 };
 
 export default function RootLayout({
